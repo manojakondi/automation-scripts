@@ -1,0 +1,83 @@
+#!/bin/bash
+ 
+##########################################################################
+# Nagios Plugin to check Jenkins Node Status along with Performance Data #
+# Author: Manoj Akondi                                                   #
+# Email: apnmanoj4u@gmail.com                                            #                         
+# Usage: check_jenkins_node <node-name>                                  #
+##########################################################################
+ 
+baseURL="<JENKINS_BASE_URL>"
+ 
+authKey="<BASIC_AUTH_KEY>"
+ 
+if [[ -z "$1" ]]
+then
+  echo "Missing parameters!"
+  echo "Syntax: check_jenkins_node <node-name>"
+  exit 3
+fi
+ 
+function getPropValue() {
+  KEY=$1
+  num=$2
+  awk -F "[,:}]" '{for(i=1;i<=NF;i++){if($i~/'$KEY'\042/){print $(i+1)}}}' | tr -d '"' | sed -n ${num}p
+}
+ 
+function toGb() {
+  awk '{ byte =$1 /1024/1024/1024; print byte }'
+}
+ 
+function getJson() {
+  jsonData="`curl -H 'authorization: $authKey' -H 'cache-control: no-cache' -s -X GET $baseURL/computer/$1/api/json`"
+  echo $jsonData
+}
+ 
+function isValidNode() {
+  status="`curl -H 'authorization: $authKey' $baseURL/computer/$1 --write-out %{http_code} --silent --output /dev/null`"
+  if [[ $status -eq 404 ]]
+  then return 1
+  elif [[ $status -eq 200 || $status -eq 302 ]]
+  then return 0
+  fi
+}
+ 
+function isNodeUp() {
+  status="`getJson $1|getPropValue offline`"
+  if [[ $status == "false" ]]
+  then return 0
+  else return 1
+  fi
+}
+ 
+function parseNodeName() {
+  if [[ $1 == "master" ]]
+  then
+    echo "(master)"
+  else
+    echo $1
+  fi
+}
+ 
+node="`parseNodeName $1`";
+if isValidNode $node;
+then
+  if isNodeUp $node;
+  then
+    msg="OK, $1 node is up and running"
+    perfdata="availablePhysicalMemory=`getJson $node|getPropValue availablePhysicalMemory|toGb` "
+    perfdata+="totalPhysicalMemory=`getJson $node|getPropValue totalPhysicalMemory|toGb` "
+    perfdata+="availableSwapSpace=`getJson $node|getPropValue availableSwapSpace|toGb` "
+    perfdata+="totalSwapSpace=`getJson $node|getPropValue totalSwapSpace|toGb` "
+    perfdata+="`getJson $node|getPropValue path 1`=`getJson $node|getPropValue size 1|toGb` "
+    perfdata+="`getJson $node|getPropValue path 2`=`getJson $node|getPropValue size 2|toGb`"
+    echo "$msg|$perfdata"
+    exit 0
+  else
+    echo "DOWN, $1 node is not running"
+    exit 2
+  fi
+else
+  echo "Not a valid node"
+  exit 3
+fi
