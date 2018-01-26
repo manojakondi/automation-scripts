@@ -8,7 +8,7 @@ Repo for Scripts useful for Jenkins Administration
 
 ###### Jenkins API Overview
 
-** Jenkins API End-Point: ** [http://{JENKINS_BASE_URL}/{NODE_NAME}/api/json](http://{JENKINS_BASE_URL}/{NODE_NAME}/api/json)
+**Jenkins API End-Point:** [http://{JENKINS_BASE_URL}/{NODE_NAME}/api/json](http://{JENKINS_BASE_URL}/{NODE_NAME}/api/json)
 
 The above API end-point gives all the basic and necessary information related to the Node availability, display name, no. of executors available, memory statistics, workspace space utilization statistics etc., Using the above API, we've developed a script that can act as a Nagios plugin and push data to ICINGA.
 
