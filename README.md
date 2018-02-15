@@ -1,6 +1,6 @@
-# jenkins-scripts
+# automation-scripts
 
-Repo for Scripts useful for Jenkins Administration
+Repo for Scripts useful for Jenkins/Docker
 
 ## How to setup API based ICINGA Monitoring for Jenkins Master and Slaves?
 
